@@ -7,16 +7,13 @@ This script orchestrates the data collection at scheduled intervals:
 """
 
 import os
-import sys
 import json
 import logging
 import schedule
 import time
 from datetime import datetime
 from typing import Dict, List
-
-# Add project root to path
-sys.path.append('/home/runner/work/20_03/20_03')
+from utils.config_loader import load_config, get_project_root
 
 from cache.redis_utils import create_cache
 from models.rag_system import create_rag_system
@@ -30,8 +27,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Load configuration
-with open('/home/runner/work/20_03/20_03/config/config.json', 'r') as f:
-    config = json.load(f)
+config = load_config()
 
 class DataCollectionPipeline:
     """Manages 12h and 24h data collection and learning cycles"""
@@ -310,7 +306,7 @@ class DataCollectionPipeline:
                 success = self.ml.train_model(training_data)
                 if success:
                     # Save model
-                    model_path = f'/home/runner/work/20_03/20_03/models/trained_model_{datetime.now().strftime("%Y%m%d")}.pkl'
+                    model_path = os.path.join(get_project_root(), 'models', f'trained_model_{datetime.now().strftime("%Y%m%d")}.pkl')
                     self.ml.save_model(model_path)
                     logger.info(f"Model retrained and saved: {model_path}")
             else:

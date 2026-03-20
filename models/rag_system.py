@@ -11,8 +11,7 @@ import logging
 from typing import Dict, List, Optional
 import numpy as np
 from datetime import datetime
-import sys
-sys.path.append('/home/runner/work/20_03/20_03')
+from utils.config_loader import load_config
 
 from cache.redis_utils import create_cache, create_vectorization_engine
 
@@ -20,8 +19,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Load configuration
-with open('/home/runner/work/20_03/20_03/config/config.json', 'r') as f:
-    config = json.load(f)
+config = load_config()
 
 class RAGSystem:
     """RAG system for historical campaign data retrieval"""

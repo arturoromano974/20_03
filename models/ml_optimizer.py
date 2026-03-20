@@ -18,13 +18,13 @@ from datetime import datetime
 from sklearn.ensemble import GradientBoostingRegressor, RandomForestClassifier
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
+from utils.config_loader import load_config
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Load configuration
-with open('/home/runner/work/20_03/20_03/config/config.json', 'r') as f:
-    config = json.load(f)
+config = load_config()
 
 class MLOptimizer:
     """Machine Learning optimizer for campaign performance"""

@@ -16,6 +16,7 @@ from flask import Flask, request, jsonify
 import openai
 import redis
 from datetime import datetime
+from utils.config_loader import load_config
 
 # Initialize Flask app
 app = Flask(__name__)
@@ -23,8 +24,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Load configuration
-with open('/home/runner/work/20_03/20_03/config/config.json', 'r') as f:
-    config = json.load(f)
+config = load_config()
 
 # Initialize OpenAI
 openai.api_key = os.getenv('OPENAI_API_KEY')

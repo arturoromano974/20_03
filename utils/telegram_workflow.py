@@ -18,13 +18,13 @@ from telegram.ext import (
     CallbackQueryHandler,
     ContextTypes
 )
+from utils.config_loader import load_config
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Load configuration
-with open('/home/runner/work/20_03/20_03/config/config.json', 'r') as f:
-    config = json.load(f)
+config = load_config()
 
 # Initialize Redis
 redis_client = redis.Redis(
