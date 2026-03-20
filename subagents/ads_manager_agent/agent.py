@@ -18,6 +18,7 @@ import redis
 import requests
 from datetime import datetime
 from utils.config_loader import load_config
+from utils.auth import require_auth
 
 app = Flask(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -357,10 +358,16 @@ Optimize for 1-day conversions.
 agent = AdsManagerAgent()
 
 @app.route('/ads-manager-agent', methods=['POST'])
+@require_auth
 def handle_request():
     """Handle incoming requests from orchestrator"""
     try:
         task_data = request.json
+        if not task_data:
+            return jsonify({
+                'status': 'error',
+                'error': 'Request body must be valid JSON'
+            }), 400
         logger.info(f"Received task: {task_data}")
 
         task_type = task_data.get('task_type', 'create_campaign')

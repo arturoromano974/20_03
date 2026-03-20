@@ -17,6 +17,7 @@ from openai import OpenAI
 import redis
 from datetime import datetime
 from utils.config_loader import load_config
+from utils.auth import require_auth
 
 # Initialize Flask app
 app = Flask(__name__)
@@ -228,10 +229,16 @@ Return a single, detailed image prompt (max 200 characters).
 agent = CreativeAgent()
 
 @app.route('/creative-agent', methods=['POST'])
+@require_auth
 def handle_request():
     """Handle incoming requests from orchestrator"""
     try:
         task_data = request.json
+        if not task_data:
+            return jsonify({
+                'status': 'error',
+                'error': 'Request body must be valid JSON'
+            }), 400
         logger.info(f"Received task: {task_data}")
 
         # Process based on task type
