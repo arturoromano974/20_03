@@ -28,7 +28,7 @@ python-dotenv==1.0.0
 facebook-business==17.0.5
 
 # Vector Database (optional, choose one)
-qdrant-client==1.6.0
+qdrant-client==1.9.0
 # weaviate-client==3.24.1
 
 # Monitoring and Logging
@@ -43,5 +43,5 @@ pyyaml==6.0.1
 tqdm==4.66.1
 
 # Production
-gunicorn==21.2.0
+gunicorn==22.0.0
 supervisor==4.2.5
