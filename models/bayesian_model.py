@@ -54,7 +54,8 @@ class BayesianOptimizer:
                     'mode': 0.0,
                     'ci_lower': 0.0,
                     'ci_upper': 0.0,
-                    'std': 0.0
+                    'std': 0.0,
+                    'insufficient_data': True
                 }
 
             # Update posterior parameters
@@ -82,7 +83,8 @@ class BayesianOptimizer:
                 'ci_upper': float(ci_upper),
                 'std': float(std),
                 'posterior_alpha': float(posterior_alpha),
-                'posterior_beta': float(posterior_beta)
+                'posterior_beta': float(posterior_beta),
+                'insufficient_data': False
             }
 
         except Exception as e:
@@ -250,14 +252,15 @@ class BayesianOptimizer:
             # Predict next period
             next_x = len(conversion_rates) + periods_ahead - 1
             predicted_rate = coeffs[0] * next_x + coeffs[1]
+            predicted_rate = np.clip(predicted_rate, 0.0, 1.0)
 
             # Calculate prediction interval
             residuals = conversion_rates - (coeffs[0] * x + coeffs[1])
             std_residual = np.std(residuals)
 
             # 95% prediction interval
-            ci_lower = predicted_rate - 1.96 * std_residual
-            ci_upper = predicted_rate + 1.96 * std_residual
+            ci_lower = max(predicted_rate - 1.96 * std_residual, 0.0)
+            ci_upper = min(predicted_rate + 1.96 * std_residual, 1.0)
 
             # Estimate clicks (use moving average)
             recent_clicks = [m.get('clicks', 0) for m in metrics_history[-5:]]

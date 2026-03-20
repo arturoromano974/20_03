@@ -165,14 +165,20 @@ class AnalyticsAgent:
                 'reach': 0
             }
 
-            # Aggregate metrics from all levels
-            for level in ['campaign', 'adsets', 'ads']:
-                level_data = performance_data.get(level, {})
-                if isinstance(level_data, list):
-                    for item in level_data:
-                        metrics = self._aggregate_metrics(metrics, item)
-                elif isinstance(level_data, dict):
-                    metrics = self._aggregate_metrics(metrics, level_data)
+            # Use the most granular level available to avoid double-counting.
+            # Ads data is preferred over adsets, adsets over campaign.
+            ads_data = performance_data.get('ads', [])
+            adsets_data = performance_data.get('adsets', [])
+            campaign_data = performance_data.get('campaign', {})
+
+            if isinstance(ads_data, list) and ads_data:
+                for item in ads_data:
+                    metrics = self._aggregate_metrics(metrics, item)
+            elif isinstance(adsets_data, list) and adsets_data:
+                for item in adsets_data:
+                    metrics = self._aggregate_metrics(metrics, item)
+            elif isinstance(campaign_data, dict) and campaign_data:
+                metrics = self._aggregate_metrics(metrics, campaign_data)
 
             # Calculate derived metrics
             if metrics['impressions'] > 0:

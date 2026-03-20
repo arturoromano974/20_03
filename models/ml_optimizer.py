@@ -102,6 +102,7 @@ class MLOptimizer:
                 self.model = GradientBoostingRegressor()
 
             self.model.fit(X_scaled, y)
+            self.training_score = float(self.model.score(X_scaled, y))
             self.is_trained = True
 
             logger.info(f"Model trained on {len(training_data)} samples")
@@ -140,7 +141,7 @@ class MLOptimizer:
                 'predicted_1day_conversion_rate': float(predicted_rate),
                 'predicted_1day_conversions': predicted_1day_conversions,
                 'confidence': confidence,
-                'model_score': float(self.model.score(features_scaled, [predicted_rate])) if hasattr(self.model, 'score') else 0.0
+                'model_score': float(self.training_score) if hasattr(self, 'training_score') else 0.0
             }
 
         except Exception as e:

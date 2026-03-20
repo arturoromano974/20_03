@@ -166,8 +166,13 @@ class RAGSystem:
 
     def _create_chunks(self, text: str) -> List[str]:
         """Create overlapping chunks from text"""
+        if not text:
+            return []
         if len(text) <= self.chunk_size:
             return [text]
+
+        # Ensure overlap is less than chunk_size to guarantee forward progress
+        effective_overlap = min(self.overlap, self.chunk_size - 1)
 
         chunks = []
         start = 0
@@ -176,7 +181,8 @@ class RAGSystem:
             end = start + self.chunk_size
             chunk = text[start:end]
             chunks.append(chunk)
-            start = end - self.overlap
+            step = self.chunk_size - effective_overlap
+            start += max(step, 1)  # Guarantee at least 1 char forward progress
 
         return chunks
 
