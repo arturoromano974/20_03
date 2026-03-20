@@ -1,0 +1,386 @@
+{
+  "name": "Marketing Automation Orchestrator",
+  "nodes": [
+    {
+      "parameters": {
+        "mode": "webhook",
+        "path": "marketing-orchestrator"
+      },
+      "id": "webhook-trigger",
+      "name": "Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "cron": "0 */12 * * *",
+        "triggerTimes": {
+          "item": [
+            {
+              "mode": "everyX",
+              "value": 12,
+              "unit": "hours"
+            }
+          ]
+        }
+      },
+      "id": "schedule-12h",
+      "name": "12-Hour Schedule",
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1,
+      "position": [250, 450]
+    },
+    {
+      "parameters": {
+        "cron": "0 0 * * *",
+        "triggerTimes": {
+          "item": [
+            {
+              "mode": "everyDay",
+              "hour": 0,
+              "minute": 0
+            }
+          ]
+        }
+      },
+      "id": "schedule-24h",
+      "name": "24-Hour Schedule",
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1,
+      "position": [250, 600]
+    },
+    {
+      "parameters": {
+        "model": "gpt-5.4-mini",
+        "options": {
+          "temperature": 0.3,
+          "maxTokens": 2000,
+          "systemMessage": "You are the main orchestrator for a professional marketing automation system. Your role is to coordinate subagents, analyze tasks, and make strategic decisions. Always think step-by-step and prioritize data-driven decisions."
+        }
+      },
+      "id": "orchestrator-llm",
+      "name": "Orchestrator LLM (GPT-5.4-Mini)",
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 1,
+      "position": [500, 300],
+      "credentials": {
+        "openAiApi": {
+          "id": "openai-credentials",
+          "name": "OpenAI API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "functionCode": "// Task Router - Determines which subagent to invoke\nconst taskType = items[0].json.taskType;\nconst taskData = items[0].json;\n\nlet route;\nswitch(taskType) {\n  case 'creative_generation':\n    route = 'creative';\n    break;\n  case 'campaign_management':\n    route = 'ads_manager';\n    break;\n  case 'analytics':\n    route = 'analytics';\n    break;\n  case 'data_collection':\n    route = 'collector';\n    break;\n  default:\n    route = 'orchestrator';\n}\n\nreturn [{\n  json: {\n    ...taskData,\n    route: route,\n    timestamp: new Date().toISOString()\n  }\n}];"
+      },
+      "id": "task-router",
+      "name": "Task Router",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [750, 300]
+    },
+    {
+      "parameters": {
+        "chatId": "={{$json.telegram_chat_id}}",
+        "text": "🤖 New Task Requires Approval\n\nTask: {{$json.taskDescription}}\nType: {{$json.taskType}}\nEstimated Impact: {{$json.estimatedImpact}}\n\nApprove this task?",
+        "additionalFields": {
+          "reply_markup": {
+            "inline_keyboard": [
+              [
+                {
+                  "text": "✅ Approve",
+                  "callback_data": "approve_{{$json.taskId}}"
+                },
+                {
+                  "text": "❌ Reject",
+                  "callback_data": "reject_{{$json.taskId}}"
+                }
+              ]
+            ]
+          }
+        }
+      },
+      "id": "telegram-approval",
+      "name": "Telegram Approval Request",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1,
+      "position": [1000, 200],
+      "credentials": {
+        "telegramApi": {
+          "id": "telegram-credentials",
+          "name": "Telegram Bot API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "key": "task_{{$json.taskId}}"
+      },
+      "id": "redis-get",
+      "name": "Redis Get Cache",
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [500, 450],
+      "credentials": {
+        "redis": {
+          "id": "redis-credentials",
+          "name": "Redis"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "set",
+        "key": "task_{{$json.taskId}}",
+        "value": "={{JSON.stringify($json)}}",
+        "options": {
+          "ttl": 86400
+        }
+      },
+      "id": "redis-set",
+      "name": "Redis Set Cache",
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [500, 600]
+    },
+    {
+      "parameters": {
+        "url": "http://localhost:5001/creative-agent",
+        "method": "POST",
+        "jsonParameters": true,
+        "options": {
+          "timeout": 30000
+        },
+        "bodyParametersJson": "={{JSON.stringify($json)}}"
+      },
+      "id": "creative-agent-call",
+      "name": "Creative Agent",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [1000, 300]
+    },
+    {
+      "parameters": {
+        "url": "http://localhost:5002/ads-manager-agent",
+        "method": "POST",
+        "jsonParameters": true,
+        "options": {
+          "timeout": 60000
+        },
+        "bodyParametersJson": "={{JSON.stringify($json)}}"
+      },
+      "id": "ads-manager-call",
+      "name": "Ads Manager Agent",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [1000, 400]
+    },
+    {
+      "parameters": {
+        "url": "http://localhost:5003/analytics-agent",
+        "method": "POST",
+        "jsonParameters": true,
+        "options": {
+          "timeout": 45000
+        },
+        "bodyParametersJson": "={{JSON.stringify($json)}}"
+      },
+      "id": "analytics-agent-call",
+      "name": "Analytics Agent",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [1000, 500]
+    },
+    {
+      "parameters": {
+        "url": "http://localhost:5004/collector-agent",
+        "method": "POST",
+        "jsonParameters": true,
+        "options": {
+          "timeout": 30000
+        },
+        "bodyParametersJson": "={{JSON.stringify($json)}}"
+      },
+      "id": "collector-agent-call",
+      "name": "Data Collector Agent",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [1000, 600]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Aggregate results from all agents and prepare response\nconst results = items.map(item => item.json);\n\nconst aggregated = {\n  status: 'completed',\n  timestamp: new Date().toISOString(),\n  results: results,\n  summary: {\n    totalTasks: results.length,\n    successful: results.filter(r => r.status === 'success').length,\n    failed: results.filter(r => r.status === 'error').length\n  }\n};\n\nreturn [{ json: aggregated }];"
+      },
+      "id": "result-aggregator",
+      "name": "Result Aggregator",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [1250, 400]
+    },
+    {
+      "parameters": {
+        "chatId": "={{$json.telegram_chat_id}}",
+        "text": "✅ Task Completed\n\nResults: {{$json.summary.successful}}/{{$json.summary.totalTasks}} successful\n\nDetails: {{JSON.stringify($json.results, null, 2)}}"
+      },
+      "id": "telegram-notification",
+      "name": "Telegram Result Notification",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1,
+      "position": [1500, 400]
+    }
+  ],
+  "connections": {
+    "Webhook Trigger": {
+      "main": [
+        [
+          {
+            "node": "Orchestrator LLM (GPT-5.4-Mini)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "12-Hour Schedule": {
+      "main": [
+        [
+          {
+            "node": "Data Collector Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "24-Hour Schedule": {
+      "main": [
+        [
+          {
+            "node": "Analytics Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Orchestrator LLM (GPT-5.4-Mini)": {
+      "main": [
+        [
+          {
+            "node": "Task Router",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Task Router": {
+      "main": [
+        [
+          {
+            "node": "Telegram Approval Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram Approval Request": {
+      "main": [
+        [
+          {
+            "node": "Creative Agent",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Ads Manager Agent",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Analytics Agent",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Data Collector Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Creative Agent": {
+      "main": [
+        [
+          {
+            "node": "Result Aggregator",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ads Manager Agent": {
+      "main": [
+        [
+          {
+            "node": "Result Aggregator",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analytics Agent": {
+      "main": [
+        [
+          {
+            "node": "Result Aggregator",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Data Collector Agent": {
+      "main": [
+        [
+          {
+            "node": "Result Aggregator",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Result Aggregator": {
+      "main": [
+        [
+          {
+            "node": "Telegram Result Notification",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Redis Set Cache",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 0,
+  "updatedAt": "2026-03-20T15:20:53.178Z",
+  "versionId": "1"
+}
