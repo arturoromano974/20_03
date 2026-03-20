@@ -1,0 +1,167 @@
+{
+  "orchestrator": {
+    "name": "Marketing Automation Orchestrator",
+    "model": "gpt-5.4-mini",
+    "temperature": 0.3,
+    "max_tokens": 2000,
+    "n8n_url": "http://localhost:5678",
+    "webhook_path": "/marketing-orchestrator"
+  },
+  "subagents": {
+    "creative_agent": {
+      "name": "Creative Generation Agent",
+      "model": "gpt-5.4-nano",
+      "temperature": 0.7,
+      "max_tokens": 1500,
+      "port": 5001,
+      "capabilities": [
+        "image_generation",
+        "copywriting",
+        "creative_analysis",
+        "similar_ads_finder"
+      ]
+    },
+    "ads_manager_agent": {
+      "name": "Facebook Ads Manager Agent",
+      "model": "gpt-5.4-nano",
+      "temperature": 0.2,
+      "max_tokens": 1000,
+      "port": 5002,
+      "capabilities": [
+        "campaign_creation",
+        "adset_management",
+        "ad_creation",
+        "budget_management"
+      ]
+    },
+    "analytics_agent": {
+      "name": "Analytics & Optimization Agent",
+      "model": "gpt-5.4-nano",
+      "temperature": 0.1,
+      "max_tokens": 2000,
+      "port": 5003,
+      "capabilities": [
+        "performance_analysis",
+        "data_processing",
+        "optimization",
+        "budget_reallocation"
+      ]
+    },
+    "data_collector_agent": {
+      "name": "Data Collection Agent",
+      "model": "gpt-5.4-nano",
+      "temperature": 0.1,
+      "max_tokens": 1000,
+      "port": 5004,
+      "capabilities": [
+        "data_fetching",
+        "insights_collection",
+        "storage_management",
+        "time_series_processing"
+      ]
+    }
+  },
+  "redis": {
+    "host": "localhost",
+    "port": 6379,
+    "db": 0,
+    "password": null,
+    "ttl": 86400,
+    "vectorization": {
+      "enabled": true,
+      "model": "text-embedding-ada-002",
+      "dimension": 1536
+    }
+  },
+  "telegram": {
+    "bot_token": "${TELEGRAM_BOT_TOKEN}",
+    "chat_id": "${TELEGRAM_CHAT_ID}",
+    "approval_timeout": 3600
+  },
+  "facebook": {
+    "access_token": "${FACEBOOK_ACCESS_TOKEN}",
+    "app_id": "${FACEBOOK_APP_ID}",
+    "app_secret": "${FACEBOOK_APP_SECRET}",
+    "ad_account_id": "${FACEBOOK_AD_ACCOUNT_ID}",
+    "api_version": "v18.0"
+  },
+  "machine_learning": {
+    "bayesian_model": {
+      "enabled": true,
+      "sensitivity": "high",
+      "prior_strength": 0.1,
+      "focus_metric": "1_day_click_view"
+    },
+    "ml_model": {
+      "enabled": true,
+      "algorithm": "gradient_boosting",
+      "retrain_interval": "24h",
+      "features": [
+        "impressions",
+        "clicks",
+        "ctr",
+        "cpc",
+        "cpm",
+        "conversions",
+        "cost",
+        "1_day_click",
+        "1_day_view"
+      ]
+    }
+  },
+  "data_collection": {
+    "intervals": {
+      "quick": "12h",
+      "deep": "24h",
+      "realtime": "5m"
+    },
+    "metrics": [
+      "impressions",
+      "clicks",
+      "spend",
+      "conversions",
+      "ctr",
+      "cpc",
+      "cpm",
+      "frequency",
+      "reach",
+      "actions",
+      "action_values"
+    ],
+    "breakdown": [
+      "age",
+      "gender",
+      "placement",
+      "device_platform"
+    ]
+  },
+  "rag": {
+    "enabled": true,
+    "vector_db": "qdrant",
+    "chunk_size": 512,
+    "overlap": 50,
+    "top_k": 5,
+    "similarity_threshold": 0.7,
+    "index_fields": [
+      "campaign_id",
+      "adset_id",
+      "ad_id",
+      "creative_id",
+      "timestamp"
+    ]
+  },
+  "automation": {
+    "approval_required": true,
+    "auto_optimize": true,
+    "auto_pause_threshold": -0.5,
+    "auto_scale_threshold": 0.3,
+    "max_budget_increase": 0.2,
+    "min_data_points": 100
+  },
+  "logging": {
+    "level": "info",
+    "format": "json",
+    "output": "file",
+    "path": "/var/log/marketing-automation"
+  }
+}
