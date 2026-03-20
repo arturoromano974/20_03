@@ -306,7 +306,7 @@ class DataCollectionPipeline:
                 success = self.ml.train_model(training_data)
                 if success:
                     # Save model
-                    model_path = os.path.join(get_project_root(), 'models', f'trained_model_{datetime.now().strftime("%Y%m%d")}.pkl')
+                    model_path = os.path.join(get_project_root(), 'models', f'trained_model_{datetime.now().strftime("%Y%m%d")}.joblib')
                     self.ml.save_model(model_path)
                     logger.info(f"Model retrained and saved: {model_path}")
             else:

@@ -12,7 +12,7 @@ This module implements ML models for:
 import json
 import logging
 import numpy as np
-import pickle
+import joblib
 from typing import Dict, List, Optional, Tuple
 from datetime import datetime
 from sklearn.ensemble import GradientBoostingRegressor, RandomForestClassifier
@@ -362,8 +362,7 @@ class MLOptimizer:
                 'timestamp': datetime.now().isoformat()
             }
 
-            with open(filepath, 'wb') as f:
-                pickle.dump(model_data, f)
+            joblib.dump(model_data, filepath)
 
             logger.info(f"Model saved to {filepath}")
             return True
@@ -375,8 +374,7 @@ class MLOptimizer:
     def load_model(self, filepath: str) -> bool:
         """Load trained model from file"""
         try:
-            with open(filepath, 'rb') as f:
-                model_data = pickle.load(f)
+            model_data = joblib.load(filepath)
 
             self.model = model_data['model']
             self.scaler = model_data['scaler']

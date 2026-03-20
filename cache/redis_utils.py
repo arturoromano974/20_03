@@ -79,10 +79,18 @@ class RedisCache:
             return False
 
     def keys(self, pattern: str) -> List[str]:
-        """Get all keys matching a pattern"""
+        """Get all keys matching a pattern using SCAN (non-blocking)"""
         try:
-            keys = self.redis_client.keys(pattern)
-            return [k.decode('utf-8') if isinstance(k, bytes) else k for k in keys]
+            result = []
+            cursor = 0
+            while True:
+                cursor, keys = self.redis_client.scan(cursor, match=pattern, count=100)
+                result.extend(
+                    k.decode('utf-8') if isinstance(k, bytes) else k for k in keys
+                )
+                if cursor == 0:
+                    break
+            return result
         except Exception as e:
             logger.error(f"Error getting keys for pattern {pattern}: {str(e)}")
             return []
