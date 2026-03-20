@@ -13,7 +13,7 @@ import json
 import logging
 from typing import Dict, List, Optional
 from flask import Flask, request, jsonify
-import openai
+from openai import OpenAI
 import redis
 from datetime import datetime
 from utils.config_loader import load_config
@@ -26,8 +26,8 @@ logger = logging.getLogger(__name__)
 # Load configuration
 config = load_config()
 
-# Initialize OpenAI
-openai.api_key = os.getenv('OPENAI_API_KEY')
+# Initialize OpenAI client
+_openai_client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
 
 # Initialize Redis
 redis_client = redis.Redis(
@@ -39,6 +39,7 @@ redis_client = redis.Redis(
 
 class CreativeAgent:
     def __init__(self):
+        self.client = _openai_client
         self.model = config['subagents']['creative_agent']['model']
         self.temperature = config['subagents']['creative_agent']['temperature']
         self.max_tokens = config['subagents']['creative_agent']['max_tokens']
@@ -161,7 +162,7 @@ Generate ad copy that:
 Return ONLY a JSON object with: headline, primary_text, description, cta
 """
 
-            response = openai.ChatCompletion.create(
+            response = self.client.chat.completions.create(
                 model=self.model,
                 messages=[
                     {"role": "system", "content": "You are an expert copywriter specializing in high-converting Facebook ads. Always return valid JSON."},
@@ -207,7 +208,7 @@ Create a professional, eye-catching image prompt that:
 Return a single, detailed image prompt (max 200 characters).
 """
 
-            response = openai.ChatCompletion.create(
+            response = self.client.chat.completions.create(
                 model=self.model,
                 messages=[
                     {"role": "system", "content": "You are an expert in visual design for advertising."},

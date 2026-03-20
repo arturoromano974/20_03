@@ -14,7 +14,7 @@ import logging
 from typing import Dict, List, Optional, Any
 import redis
 import numpy as np
-import openai
+from openai import OpenAI
 from datetime import datetime
 from utils.config_loader import load_config
 
@@ -24,8 +24,8 @@ logger = logging.getLogger(__name__)
 # Load configuration
 config = load_config()
 
-# Initialize OpenAI for embeddings
-openai.api_key = os.getenv('OPENAI_API_KEY')
+# Initialize OpenAI client for embeddings
+_openai_client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
 
 class RedisCache:
     """Redis cache manager with advanced features"""
@@ -92,6 +92,7 @@ class VectorizationEngine:
 
     def __init__(self, cache: RedisCache):
         self.cache = cache
+        self.client = _openai_client
         self.model = config['redis']['vectorization']['model']
         self.dimension = config['redis']['vectorization']['dimension']
 
@@ -105,12 +106,12 @@ class VectorizationEngine:
                 return np.array(cached)
 
             # Generate new embedding
-            response = openai.Embedding.create(
+            response = self.client.embeddings.create(
                 input=text,
                 model=self.model
             )
 
-            embedding = np.array(response['data'][0]['embedding'])
+            embedding = np.array(response.data[0].embedding)
 
             # Cache embedding
             self.cache.set(cache_key, embedding.tolist(), ttl=86400 * 7)  # 7 days
@@ -141,13 +142,13 @@ class VectorizationEngine:
 
             # Generate missing embeddings in batch
             if texts_to_generate:
-                response = openai.Embedding.create(
+                response = self.client.embeddings.create(
                     input=texts_to_generate,
                     model=self.model
                 )
 
-                for i, embedding_data in enumerate(response['data']):
-                    embedding = np.array(embedding_data['embedding'])
+                for i, embedding_data in enumerate(response.data):
+                    embedding = np.array(embedding_data.embedding)
                     idx = indices_to_generate[i]
                     embeddings[idx] = embedding
 

@@ -3,7 +3,7 @@
 # Core dependencies
 flask==2.3.3
 redis==5.0.0
-openai==0.28.1
+openai==1.75.0
 python-telegram-bot==20.5
 
 # Machine Learning

@@ -13,7 +13,7 @@ import json
 import logging
 from typing import Dict, List, Optional
 from flask import Flask, request, jsonify
-import openai
+from openai import OpenAI
 import redis
 import requests
 from datetime import datetime, timedelta
@@ -26,8 +26,8 @@ logger = logging.getLogger(__name__)
 # Load configuration
 config = load_config()
 
-# Initialize OpenAI
-openai.api_key = os.getenv('OPENAI_API_KEY')
+# Initialize OpenAI client
+_openai_client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
 
 # Initialize Redis
 redis_client = redis.Redis(
@@ -45,6 +45,7 @@ FB_API_BASE = f"https://graph.facebook.com/{FB_API_VERSION}"
 
 class DataCollectorAgent:
     def __init__(self):
+        self.client = _openai_client
         self.model = config['subagents']['data_collector_agent']['model']
         self.temperature = config['subagents']['data_collector_agent']['temperature']
         self.max_tokens = config['subagents']['data_collector_agent']['max_tokens']

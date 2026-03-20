@@ -13,7 +13,7 @@ import json
 import logging
 from typing import Dict, List, Optional
 from flask import Flask, request, jsonify
-import openai
+from openai import OpenAI
 import redis
 import requests
 from datetime import datetime
@@ -26,8 +26,8 @@ logger = logging.getLogger(__name__)
 # Load configuration
 config = load_config()
 
-# Initialize OpenAI
-openai.api_key = os.getenv('OPENAI_API_KEY')
+# Initialize OpenAI client
+_openai_client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
 
 # Initialize Redis
 redis_client = redis.Redis(
@@ -45,6 +45,7 @@ FB_API_BASE = f"https://graph.facebook.com/{FB_API_VERSION}"
 
 class AdsManagerAgent:
     def __init__(self):
+        self.client = _openai_client
         self.model = config['subagents']['ads_manager_agent']['model']
         self.temperature = config['subagents']['ads_manager_agent']['temperature']
         self.max_tokens = config['subagents']['ads_manager_agent']['max_tokens']
@@ -272,7 +273,7 @@ Return a JSON object with:
 Focus on 1-day click/view conversions.
 """
 
-            response = openai.ChatCompletion.create(
+            response = self.client.chat.completions.create(
                 model=self.model,
                 messages=[
                     {"role": "system", "content": "You are a Facebook Ads campaign strategist. Always return valid JSON."},
@@ -312,7 +313,7 @@ Return a JSON object with Facebook targeting parameters:
 Optimize for 1-day conversions.
 """
 
-            response = openai.ChatCompletion.create(
+            response = self.client.chat.completions.create(
                 model=self.model,
                 messages=[
                     {"role": "system", "content": "You are a Facebook Ads targeting expert. Always return valid JSON."},
