@@ -116,6 +116,32 @@ class TelegramApprovalWorkflow:
             logger.error(f"Error requesting approval: {str(e)}")
             return False
 
+    def request_approval_sync(self, task_id: str, task_data: Dict,
+                              callback: Optional[Callable] = None) -> bool:
+        """Synchronous wrapper for request_approval.
+
+        Use this from synchronous Flask routes or other non-async code.
+        """
+        import asyncio
+
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            loop = None
+
+        if loop and loop.is_running():
+            # Already inside an event loop – schedule as a task
+            import concurrent.futures
+            with concurrent.futures.ThreadPoolExecutor() as pool:
+                return pool.submit(
+                    asyncio.run,
+                    self.request_approval(task_id, task_data, callback),
+                ).result()
+        else:
+            return asyncio.run(
+                self.request_approval(task_id, task_data, callback)
+            )
+
     async def handle_approval_callback(self, update: Update,
                                       context: ContextTypes.DEFAULT_TYPE):
         """Handle approval button callbacks"""
@@ -123,7 +149,11 @@ class TelegramApprovalWorkflow:
         await query.answer()
 
         # Parse callback data
-        action, task_id = query.data.split('_', 1)
+        parts = query.data.split('_', 1)
+        if len(parts) != 2:
+            await query.edit_message_text("⚠️ Invalid callback data")
+            return
+        action, task_id = parts
 
         # Get approval data
         approval_key = f'approval:pending:{task_id}'
